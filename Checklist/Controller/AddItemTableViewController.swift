@@ -11,41 +11,55 @@ import UIKit
 protocol AddItemViewControllerDelegate: class {
     func addItemViewControllerDidCancel(_ controller: AddItemTableViewController)
     func addItemViewController(_ controller: AddItemTableViewController, didFinishAdding item: ChecklistItem)
+    func addItemViewController(_ controller: AddItemTableViewController, didFinishEditing item: ChecklistItem)
 }
 
 class AddItemTableViewController: UITableViewController {
     
     weak var delegate: AddItemViewControllerDelegate?
+    weak var todoList: TodoList?
+    weak var itemToEdit: ChecklistItem?
+    
 
     
     @IBOutlet weak var cancelBarButton: UIBarButtonItem!
     @IBOutlet weak var addBarButton: UIBarButtonItem!
-    @IBOutlet weak var textField: UITextField!
+    @IBOutlet weak var textfield: UITextField!
     
     
     @IBAction func cancel(_ sender: Any) {
-        navigationController?.popViewController(animated: true)
         delegate?.addItemViewControllerDidCancel(self)
     }
     
     @IBAction func done(_ sender: Any) {
-        navigationController?.popViewController(animated: true)
-        let item = ChecklistItem()
-        if let textFieldText = textField.text {
-            item.text = textFieldText
+        if let item = itemToEdit, let text = textfield.text {
+            item.text = text
+            delegate?.addItemViewController(self, didFinishEditing: item)
+        }else {
+            if let item = todoList?.newTodo() {
+                if let textFieldText = textfield.text {
+                    item.text = textFieldText
+                }
+                item.checked = false
+                delegate?.addItemViewController(self, didFinishAdding: item)
+            }
         }
-        item.checked = false
-        delegate?.addItemViewController(self, didFinishAdding: item)
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         navigationItem.largeTitleDisplayMode = .never
-        textField.delegate = self
+        textfield.delegate = self
+        
+        if let item = itemToEdit{
+            title = "Edit Item"
+            textfield.text = item.text
+            addBarButton.isEnabled = true
+        }
     }
     
     override func viewWillAppear(_ animated: Bool) {
-        textField.becomeFirstResponder()
+        textfield.becomeFirstResponder()
     }
     
     override func tableView(_ tableView: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath? {
@@ -78,15 +92,3 @@ extension AddItemTableViewController: UITextFieldDelegate{
     }
 }
 
-
-extension ChecklistViewController: AddItemViewControllerDelegate {
-    func addItemViewControllerDidCancel(_ controller: AddItemTableViewController) {
-        navigationController?.popViewController(animated: true)
-    }
-    
-    func addItemViewController(_ controller: AddItemTableViewController, didFinishAdding item: ChecklistItem) {
-        navigationController?.popViewController(animated: true)
-    }
-    
-    
-}
